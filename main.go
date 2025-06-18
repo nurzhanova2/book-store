@@ -7,6 +7,7 @@ import (
 	"github.com/joho/godotenv"
 	"go-auth-app/config"
 	"go-auth-app/handlers"
+	"go-auth-app/middleware"
 )
 
 func main() {
@@ -21,6 +22,7 @@ func main() {
 
 	http.HandleFunc("/register", handlers.RegisterHandler)
     http.HandleFunc("/login", handlers.LoginHandler)
+	http.Handle("/profile", middleware.AuthMiddleware(http.HandlerFunc(handlers.ProfileHandler)))
 
 	log.Println("Сервер запущен на http://localhost:8080")
 	http.ListenAndServe(":8080", nil)
