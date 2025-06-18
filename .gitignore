@@ -1,1 +1,25 @@
+# Бинарники Go
+/go-auth-app
+*.exe
+*.out
+*.test
+
+# Кэш и временные файлы
+*.log
+*.tmp
+
+# Папки Go-модуля
+vendor/
+bin/
+build/
+
+# IDE и системные файлы
+.vscode/
+.idea/
+.DS_Store
+*.swp
+
+# Переменные окружения
 .env
+.env.local
+.env.*.local
