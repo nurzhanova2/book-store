@@ -21,6 +21,7 @@ func main() {
 	}
 
 	http.HandleFunc("/register", handlers.RegisterHandler)
+	log.Println("✅ Роут /register подключен") // <--- добавь эту строку
     http.HandleFunc("/login", handlers.LoginHandler)
 	http.Handle("/profile", middleware.AuthMiddleware(http.HandlerFunc(handlers.ProfileHandler)))
 
