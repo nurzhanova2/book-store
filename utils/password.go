@@ -36,7 +36,7 @@ func ValidatePassword(password string) error {
 	}
 
 	if !hasMinLen || !hasNumber || !hasUpper || !hasSpecial {
-		return errors.New("Пароль должен содержать минимум 8 символов, цифру, заглавную букву и спецсимвол")
+		return errors.New("пароль должен содержать минимум 8 символов, цифру, заглавную букву и спецсимвол")
 	}
 
 	return nil
