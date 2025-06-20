@@ -3,7 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"net/http"
-	"go-auth-app/middleware" // импортируем middleware, чтобы получить userKey
+	"go-auth-app/internal/middleware" // импортируем middleware, чтобы получить userKey
 )
 
 func ProfileHandler(w http.ResponseWriter, r *http.Request) {

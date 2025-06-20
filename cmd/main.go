@@ -5,9 +5,9 @@ import (
 	"net/http"
 
 	"github.com/joho/godotenv"
-	"go-auth-app/config"
-	"go-auth-app/handlers"
-	"go-auth-app/middleware"
+	"go-auth-app/internal/config"
+	"go-auth-app/internal/handlers"
+	"go-auth-app/internal/middleware"
 )
 
 func main() {

@@ -8,8 +8,8 @@ import (
 	"net/mail"
 	"strings"
 
-	"go-auth-app/config"
-	"go-auth-app/utils"
+	"go-auth-app/internal/config"
+	"go-auth-app/internal/utils"
 
 	"github.com/jackc/pgconn"
 )
@@ -29,10 +29,8 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var input RegisterInput
-
 	err := json.NewDecoder(r.Body).Decode(&input)
 	if err != nil {
-		log.Println("Ошибка парсинга JSON:", err)
 		http.Error(w, "Невалидный JSON", http.StatusBadRequest)
 		return
 	}
@@ -46,8 +44,7 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = mail.ParseAddress(input.Email)
-	if err != nil {
+	if _, err := mail.ParseAddress(input.Email); err != nil {
 		http.Error(w, "Невалидный email", http.StatusBadRequest)
 		return
 	}
@@ -59,36 +56,17 @@ func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 
 	hashedPassword, err := utils.HashPassword(input.Password)
 	if err != nil {
-		log.Println("Ошибка хэширования пароля:", err)
 		http.Error(w, "Ошибка хэширования пароля", http.StatusInternalServerError)
 		return
 	}
 
-log.Printf("👤 Регистрация: username=%s email=%s", input.Username, input.Email)
-
-query := `INSERT INTO users (username, email, password)
-          VALUES ($1, $2, $3)`
-
-_, err = config.DB.Exec(
-	r.Context(),
-	query,
-	input.Username,
-	input.Email,
-	hashedPassword,
-)
-
+	query := `INSERT INTO users (username, email, password) VALUES ($1, $2, $3)`
+	_, err = config.DB.Exec(r.Context(), query, input.Username, input.Email, hashedPassword)
 	if err != nil {
 		if pgErr, ok := err.(*pgconn.PgError); ok && pgErr.Code == "23505" {
-			log.Println("⚠️ Ошибка: пользователь уже существует:", pgErr)
-			http.Error(w, "Пользователь с таким email или username уже существует", http.StatusConflict)
+			http.Error(w, "Пользователь уже существует", http.StatusConflict)
 			return
 		}
-
-		if pgErr, ok := err.(*pgconn.PgError); ok {
-			log.Printf("Postgres ошибка: Code=%s | Message=%s | Detail=%s", pgErr.Code, pgErr.Message, pgErr.Detail)
-		}
-
-		log.Println("Ошибка при добавлении пользователя в БД:", err)
 		http.Error(w, "Ошибка базы данных", http.StatusInternalServerError)
 		return
 	}
@@ -104,9 +82,7 @@ type LoginInput struct {
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var input LoginInput
-
-	err := json.NewDecoder(r.Body).Decode(&input)
-	if err != nil {
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		http.Error(w, "Невалидный JSON", http.StatusBadRequest)
 		return
 	}
@@ -115,13 +91,8 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	var userID int
 
 	query := `SELECT id, password FROM users WHERE email = $1`
-	err = config.DB.QueryRow(r.Context(), query, input.Email).Scan(&userID, &storedHash)
-	if err != nil {
-		http.Error(w, "Неверный email или пароль", http.StatusUnauthorized)
-		return
-	}
-
-	if !utils.CheckPasswordHash(input.Password, storedHash) {
+	err := config.DB.QueryRow(r.Context(), query, input.Email).Scan(&userID, &storedHash)
+	if err != nil || !utils.CheckPasswordHash(input.Password, storedHash) {
 		http.Error(w, "Неверный email или пароль", http.StatusUnauthorized)
 		return
 	}
