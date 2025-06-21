@@ -7,10 +7,17 @@ import (
      adminHandlers "go-auth-app/internal/handlers/admin"
      userHandlers "go-auth-app/internal/handlers/users"
     "net/http"
+     _ "go-auth-app/cmd/docs"
+
+    httpSwagger "github.com/swaggo/http-swagger"
+
 )
 
 func SetupRoutes() *mux.Router {
     r := mux.NewRouter()
+
+    r.PathPrefix("/swagger/").Handler(httpSwagger.WrapHandler)
+
 
     r.HandleFunc("/register", authHandlers.RegisterHandler).Methods("POST")
     r.HandleFunc("/login", authHandlers.LoginHandler).Methods("POST")

@@ -16,7 +16,13 @@ func AdminHandler(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintln(w, "Добро пожаловать, админ!")
 }
 
-// GET /admin/users
+// GetAllUsers godoc
+// @Summary Получить всех пользователей
+// @Tags admin
+// @Security BearerAuth
+// @Produce json
+// @Success 200 {array} models.User
+// @Router /admin/users [get]
 func GetAllUsers(w http.ResponseWriter, r *http.Request) {
     users, err := models.GetAllUsers()
     if err != nil {
@@ -28,7 +34,17 @@ func GetAllUsers(w http.ResponseWriter, r *http.Request) {
     json.NewEncoder(w).Encode(users)
 }
 
-// POST /admin/users
+// CreateUser godoc
+// @Summary      Создать пользователя
+// @Description  Доступно только администратору
+// @Tags         admin
+// @Accept       json
+// @Produce      json
+// @Param        input body models.User true "Новый пользователь"
+// @Security     BearerAuth
+// @Success      201 {string} string "Пользователь создан"
+// @Failure      400 {string} string "Невалидные данные"
+// @Router       /admin/users [post]
 func CreateUser(w http.ResponseWriter, r *http.Request) {
     var user models.User
     if err := json.NewDecoder(r.Body).Decode(&user); err != nil {
@@ -50,7 +66,19 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintln(w, "Пользователь успешно создан")
 }
 
-// PUT /admin/users/{id}
+// UpdateUser godoc
+// @Summary      Обновить пользователя
+// @Description  Обновляет информацию пользователя по ID
+// @Tags         admin
+// @Accept       json
+// @Produce      json
+// @Param        id path int true "ID пользователя"
+// @Param        input body models.User true "Обновлённые данные"
+// @Security     BearerAuth
+// @Success      200 {string} string "Пользователь обновлён"
+// @Failure      400 {string} string "Ошибка запроса"
+// @Failure      500 {string} string "Ошибка сервера"
+// @Router       /admin/users/{id} [put]
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
     vars := mux.Vars(r)
     idStr := vars["id"]
@@ -104,7 +132,15 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintln(w, "Пользователь успешно обновлён")
 }
 
-// DELETE /admin/users/{id}
+// DeleteUser godoc
+// @Summary      Удалить пользователя
+// @Description  Удаляет пользователя по ID
+// @Tags         admin
+// @Param        id path int true "ID пользователя"
+// @Security     BearerAuth
+// @Success      200 {string} string "Пользователь удалён"
+// @Failure      500 {string} string "Ошибка удаления"
+// @Router       /admin/users/{id} [delete]
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
     vars := mux.Vars(r)
     idStr := vars["id"]
@@ -123,9 +159,15 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
     fmt.Fprintln(w, "Пользователь успешно удалён")
 }
 
-
-// GET /admin/dashboard
-
+// AdminDashboard godoc
+// @Summary      Панель администратора
+// @Description  Показывает статистику: количество пользователей, активные сессии, последние входы
+// @Tags         admin
+// @Produce      json
+// @Security     BearerAuth
+// @Success      200 {object} map[string]interface{}
+// @Failure      500 {string} string "Ошибка сервера"
+// @Router       /admin/dashboard [get]
 func AdminDashboard(w http.ResponseWriter, r *http.Request) {
     data, err := models.GetDashboardData()
     if err != nil {

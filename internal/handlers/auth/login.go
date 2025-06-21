@@ -10,7 +10,16 @@ import (
     "go-auth-app/internal/utils"
 )
 
-
+// LoginHandler godoc
+// @Summary Авторизация пользователя
+// @Description Логин по email и паролю. Возвращает access_token.
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param input body LoginInput true "Данные для логина"
+// @Success 200 {object} map[string]string
+// @Failure 401 {string} string "Неверный email или пароль"
+// @Router /login [post]
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
     var input LoginInput
     if err := json.NewDecoder(r.Body).Decode(&input); err != nil {

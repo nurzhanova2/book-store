@@ -14,6 +14,16 @@ import (
 	"log"
 )
 
+// RegisterHandler godoc
+// @Summary      Регистрация пользователя
+// @Description  Создание нового пользователя
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        input body models.User true "Данные нового пользователя"
+// @Success      201 {string} string "Пользователь создан"
+// @Failure      400 {string} string "Невалидные данные"
+// @Router       /register [post]
 func RegisterHandler(w http.ResponseWriter, r *http.Request) {
 	log.Println("Получен запрос на регистрацию")
 
