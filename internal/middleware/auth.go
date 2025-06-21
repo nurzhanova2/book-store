@@ -12,7 +12,6 @@ type contextKey string
 
 const userKey contextKey = "userID"
 
-// AuthMiddleware извлекает токен и кладёт user_id в контекст
 func AuthMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		authHeader := r.Header.Get("Authorization")
@@ -34,7 +33,6 @@ func AuthMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-// Функция для доступа к ключу user_id
 func UserKey() interface{} {
 	return userKey
 }
