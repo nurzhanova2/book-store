@@ -26,6 +26,7 @@ func SetupRoutes() *mux.Router {
     adminRouter.HandleFunc("/users", adminHandlers.CreateUser).Methods("POST")
     adminRouter.HandleFunc("/users/{id}", adminHandlers.UpdateUser).Methods("PUT")
     adminRouter.HandleFunc("/users/{id}", adminHandlers.DeleteUser).Methods("DELETE")
+    adminRouter.HandleFunc("/dashboard", adminHandlers.AdminDashboard).Methods("GET")
 
     return r
 }

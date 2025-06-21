@@ -122,3 +122,17 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
     w.WriteHeader(http.StatusOK)
     fmt.Fprintln(w, "Пользователь успешно удалён")
 }
+
+
+// GET /admin/dashboard
+
+func AdminDashboard(w http.ResponseWriter, r *http.Request) {
+    data, err := models.GetDashboardData()
+    if err != nil {
+        http.Error(w, "Ошибка получения данных для дашборда", http.StatusInternalServerError)
+        return
+    }
+
+    w.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(w).Encode(data)
+}
