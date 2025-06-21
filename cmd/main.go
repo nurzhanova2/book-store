@@ -20,10 +20,18 @@ func main() {
 		log.Fatal(err)
 	}
 
+    if err := config.ConnectDB(); err != nil {
+	log.Fatal(err)
+  }
+
+config.LoadTokenConfig()
+
 	http.HandleFunc("/register", handlers.RegisterHandler)
-	log.Println("✅ Роут /register подключен") 
     http.HandleFunc("/login", handlers.LoginHandler)
 	http.Handle("/profile", middleware.AuthMiddleware(http.HandlerFunc(handlers.ProfileHandler)))
+    http.HandleFunc("/auth/logout", handlers.LogoutHandler)
+	http.HandleFunc("/auth/refresh", handlers.RefreshHandler)
+
 
 	log.Println("Сервер запущен на http://localhost:8080")
 	http.ListenAndServe(":8080", nil)
