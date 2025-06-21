@@ -7,8 +7,10 @@ import (
 	"net/http"
 	"net/mail"
 	"strings"
+	"time"
 
 	"go-auth-app/internal/config"
+	"go-auth-app/internal/models"
 	"go-auth-app/internal/utils"
 
 	"github.com/jackc/pgconn"
@@ -97,12 +99,112 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, err := utils.GenerateJWT(userID)
+	accessToken, err := utils.GenerateJWT(userID)
 	if err != nil {
-		http.Error(w, "Ошибка генерации токена", http.StatusInternalServerError)
+		http.Error(w, "Ошибка генерации access токена", http.StatusInternalServerError)
+		return
+	}
+
+	refreshToken, err := utils.GenerateRefreshToken()
+	if err != nil {
+		http.Error(w, "Ошибка генерации refresh токена", http.StatusInternalServerError)
+		return
+	}
+
+	expiresAt := time.Now().Add(time.Duration(config.RefreshTokenDays) * 24 * time.Hour)
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    refreshToken,
+		HttpOnly: true,
+		Secure:   true,
+		Path:     "/",
+		Expires:  expiresAt,
+	})
+
+	err = models.SaveRefreshToken(r.Context(), userID, refreshToken, expiresAt)
+	if err != nil {
+		http.Error(w, "Ошибка сохранения refresh токена", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"token": token})
+	json.NewEncoder(w).Encode(map[string]string{
+		"access_token": accessToken,
+	})
+}
+
+func RefreshHandler(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("refresh_token")
+	if err != nil {
+		http.Error(w, "Refresh token отсутствует", http.StatusUnauthorized)
+		return
+	}
+
+	storedToken, err := models.GetRefreshToken(r.Context(), cookie.Value)
+	if err != nil {
+		http.Error(w, "Недействительный refresh токен", http.StatusUnauthorized)
+		return
+	}
+
+	if storedToken.Revoked || storedToken.ExpiresAt.Before(time.Now()) {
+		http.Error(w, "Refresh токен истёк или отозван", http.StatusUnauthorized)
+		return
+	}
+
+	accessToken, err := utils.GenerateJWT(storedToken.UserID)
+	if err != nil {
+		http.Error(w, "Ошибка генерации access токена", http.StatusInternalServerError)
+		return
+	}
+
+	newRefreshToken, err := utils.GenerateRefreshToken()
+	if err != nil {
+		http.Error(w, "Ошибка генерации нового refresh токена", http.StatusInternalServerError)
+		return
+	}
+
+	_ = models.RevokeRefreshToken(r.Context(), storedToken.Token)
+
+	expiresAt := time.Now().Add(time.Duration(config.RefreshTokenDays) * 24 * time.Hour)
+
+	err = models.SaveRefreshToken(r.Context(), storedToken.UserID, newRefreshToken, expiresAt)
+	if err != nil {
+		http.Error(w, "Ошибка сохранения нового refresh токена", http.StatusInternalServerError)
+		return
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     "refresh_token",
+		Value:    newRefreshToken,
+		HttpOnly: true,
+		Secure:   true,
+		Path:     "/",
+		Expires:  expiresAt,
+	})
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{
+		"access_token": accessToken,
+	})
+}
+
+func LogoutHandler(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("refresh_token")
+	if err == nil {
+		_ = models.RevokeRefreshToken(r.Context(), cookie.Value)
+
+		http.SetCookie(w, &http.Cookie{
+			Name:     "refresh_token",
+			Value:    "",
+			Path:     "/",
+			Expires:  time.Unix(0, 0),
+			MaxAge:   -1,
+			HttpOnly: true,
+			Secure:   true,
+		})
+	}
+
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintln(w, "Вы вышли из системы")
 }

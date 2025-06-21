@@ -4,7 +4,9 @@ import (
 	"errors"
 	"os"
 	"time"
-
+	"crypto/rand"
+    "encoding/hex"
+	"go-auth-app/internal/config"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -16,22 +18,24 @@ type Claims struct {
 
 // Создание JWT токена
 func GenerateJWT(userID int) (string, error) {
-	claims := Claims{
-		UserID: userID,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-		},
-	}
+    expiresIn := time.Duration(config.AccessTokenMinutes) * time.Minute
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    claims := Claims{
+        UserID: userID,
+        RegisteredClaims: jwt.RegisteredClaims{
+            ExpiresAt: jwt.NewNumericDate(time.Now().Add(expiresIn)),
+            IssuedAt:  jwt.NewNumericDate(time.Now()),
+        },
+    }
 
-	secret := os.Getenv("JWT_SECRET")
-	if secret == "" {
-		return "", errors.New("JWT_SECRET не задан в .env")
-	}
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	return token.SignedString([]byte(secret))
+    secret := os.Getenv("JWT_SECRET")
+    if secret == "" {
+        return "", errors.New("JWT_SECRET не задан в .env")
+    }
+
+    return token.SignedString([]byte(secret))
 }
 
 // Проверка и извлечение user_id из токена
@@ -55,4 +59,12 @@ func ParseJWT(tokenStr string) (int, error) {
 	}
 
 	return claims.UserID, nil
+}
+
+func GenerateRefreshToken() (string, error) {
+    bytes := make([]byte, 32)
+    if _, err := rand.Read(bytes); err != nil {
+        return "", err
+    }
+    return hex.EncodeToString(bytes), nil
 }
